@@ -1,6 +1,7 @@
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = "mongodb+srv://SmartRescueAdmin:smartrescue123@cluster0.t9j16to.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-
+//phú: ThienPhuDoan
+//Bảo: SmartRescueAdmin
 //tạo một client MongoDB mới với URI kết nối và các tùy chọn server API
 // Create a new MongoDB client with the connection URI and server API options
 const client = new MongoClient(uri, {
