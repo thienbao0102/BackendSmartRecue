@@ -1,7 +1,7 @@
 const express = require('express');
 const { runConnect, closeConnection } = require('./HandlerData/HandlerDataMongoDB.js');
 
-const { LoginHandler, getInforPatients } = require('./HandlerRequest/HandlerAccount.js');
+const { LoginHandler, getInforPatients, RegisterHandler } = require('./HandlerRequest/HandlerAccount.js');
 
 const { UpdateLocationHandler, GetLocationHandler, GetRoadHistoryHandler } = require('./HandlerRequest/LocationTrack.js')
 
@@ -21,7 +21,7 @@ runConnect();
 closeConnection();
 
 //api handler for sign up
-app.post('/signup', (req, res) => res.send('Hello World!'))
+app.post('/signup', (req, res) => RegisterHandler(req, res));
 
 //api handler for login
 app.post('/login', (req, res) => { LoginHandler(req, res) });
