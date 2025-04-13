@@ -17,9 +17,9 @@ async function sendWarningToRelative(req, res) {
     const message = "toi la supper hero";
     relativeClients[relativeId].write(`data: ${JSON.stringify(message)}\n\n`)
     // Khi client ngắt kết nối
-    req.on("close", () => {
-        delete clients[userId];
-    });
+    // req.on("close", () => {
+    //     delete clients[userId];
+    // });
 }
 
 async function warningFromPatient(req, res) {

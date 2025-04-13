@@ -51,4 +51,30 @@ async function UpdateLocationHandler(req, res) {
     res.status(200).json({ message: 'Location updated successfully' });
 }
 
-module.exports ={UpdateLocationHandler}
+// This function handles the get location request for patients
+async function GetLocationHandler(req, res) {
+    const { patientId } = req.params;
+    console.log("patientId: ", patientId);
+
+    const patient = await patientsCollection.findOne({ _id: patientId }, { projection: { nowLocation: 1 } });
+    console.log("patient: ", patient.nowLocation.coordinates);
+    if (!patient) {
+        return res.status(404).json({ message: 'Patient not found' });
+    }
+    res.status(200).json({ message: 'Get location successfully', location: patient.nowLocation.coordinates });
+}
+
+//this function handles the get road history request for patients
+async function GetRoadHistoryHandler(req, res) {
+    const { patientId } = req.params;
+    console.log("patientId: ", patientId);
+
+    const patient = await patientsCollection.findOne({ _id: patientId }, { projection: { roadHistory: 1 } });
+    console.log("roadHistory: ", patient.roadHistory);
+    if (!patient) {
+        return res.status(404).json({ message: 'Patient not found' });
+    }
+    res.status(200).json({ message: 'Get road history successfully', roadHistory: patient.roadHistory });
+};
+
+module.exports ={UpdateLocationHandler, GetLocationHandler, GetRoadHistoryHandler}

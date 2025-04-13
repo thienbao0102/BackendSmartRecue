@@ -1,9 +1,9 @@
 const express = require('express');
 const { runConnect, closeConnection } = require('./HandlerData/HandlerDataMongoDB.js');
 
-const { LoginHandler } = require('./HandlerRequest/HandlerAccount.js');
+const { LoginHandler, getInforPatients } = require('./HandlerRequest/HandlerAccount.js');
 
-const { UpdateLocationHandler } = require('./HandlerRequest/LocationTrack.js')
+const { UpdateLocationHandler, GetLocationHandler, GetRoadHistoryHandler } = require('./HandlerRequest/LocationTrack.js')
 
 const { warningFromPatient, sendWarningToRelative } = require("./HandlerRequest/Monitor_Warning.js")
 
@@ -26,6 +26,9 @@ app.post('/signup', (req, res) => res.send('Hello World!'))
 //api handler for login
 app.post('/login', (req, res) => { LoginHandler(req, res) });
 
+//api handler for get information of patients
+app.post('/getInforPatients', authenticate, (req, res) => { getInforPatients(req, res) });
+
 //api refresh token
 app.post('/refresh-token', (req, res) => { refreshAccessToken(req.body.refreshToken, res) });
 
@@ -36,10 +39,10 @@ app.post('/signuppatients', (req, res) => res.send('Hello World!'))
 app.put('/updateLocation/:patientId', authenticate, (req, res) => UpdateLocationHandler(req, res));
 
 //api handler for get patients location
-app.get('/getLocation', (req, res) => res.send('Hello World!'))
+app.get('/getLocation/:patientId', authenticate, (req, res) => GetLocationHandler(req, res));
 
 //api handler for get patients location history
-app.get('/getLocationHistory', (req, res) => res.send('Hello World!'))
+app.get('/getRoadHistory/:patientId', authenticate, (req, res) => GetRoadHistoryHandler(req, res))
 
 //api handler for get warning from patients
 app.post('/warning/:relativeId', authenticate, (req, res) => warningFromPatient(req, res))

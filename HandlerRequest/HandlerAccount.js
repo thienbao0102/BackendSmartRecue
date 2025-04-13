@@ -16,13 +16,13 @@ async function LoginHandler(req, res) {
 
     // Check the user exists in the database
     let User = null
-    if(userRole == 1){
+    if (userRole == 1) {
         User = await patientsCollection.findOne({ phoneNumber: phoneNumber, password: password });
     }
-    else{
+    else {
         User = await relativesCollection.findOne({ phoneNumber: phoneNumber, password: password })
     }
-     
+
     console.log("User: ", User);
     if (!User) {
         return res.status(404).json({ message: 'User not found' });
@@ -34,4 +34,20 @@ async function LoginHandler(req, res) {
     return res.status(200).json({ message: 'Login successful', user: User, accessToken: accessToken, refreshToken: refreshToken });
 }
 
-module.exports = { LoginHandler };
+async function getInforPatients(req, res) {
+    const listPatientId = req.body.listPatientId;
+    console.log("listPatientId: ", listPatientId);
+
+    let listPatients = [];
+
+    listPatients = await patientsCollection.find({ _id: { $in: listPatientId } },
+        {
+            projection: { _id: 1, name: 1, age: 1, phoneNumber: 1, diseaseDescription: 1 }
+        }).toArray();
+
+    console.log("listPatients: ", listPatients);
+
+    return res.status(200).json({ message: 'Get list patients successful', listPatients: listPatients });
+};
+
+module.exports = { LoginHandler, getInforPatients };
