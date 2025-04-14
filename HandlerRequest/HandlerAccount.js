@@ -9,6 +9,7 @@ async function LoginHandler(req, res) {
     const { phoneNumber, password, userRole } = req.body;
     console.log("phoneNumber: ", phoneNumber);
     console.log("password: ", password);
+    console.log("userRole from client: ", userRole);
 
     // Check the phone number and password are provided
     if (phoneNumber.length != 10 || password.length < 8 || password.length > 25) {
@@ -17,11 +18,10 @@ async function LoginHandler(req, res) {
 
     // Check the user exists in the database
     let User = null
-    if (userRole == 1) {
-        User = await patientsCollection.findOne({ phoneNumber: phoneNumber, password: password });
-    }
-    else {
-        User = await relativesCollection.findOne({ phoneNumber: phoneNumber, password: password })
+    if (userRole == 0) {
+        User = await patientsCollection.findOne({ phoneNumber: phoneNumber });
+    } else {
+        User = await relativesCollection.findOne({ phoneNumber: phoneNumber });
     }
 
     console.log("User: ", User);
@@ -31,7 +31,7 @@ async function LoginHandler(req, res) {
 
     const isMatch = await bcrypt.compare(password, User.password);
     if (!isMatch) {
-        return res.status(405).json({ message: 'Sai mật khẩu' });
+        return res.status(401).json({ message: 'Sai mật khẩu' });
     }
 
     //create access token and refresh token
@@ -83,7 +83,7 @@ async function RegisterHandler(req, res) {
     // Mã hóa mật khẩu trước khi lưu
     const hashedPassword = await bcrypt.hash(password, 10);
      // Tạo ID dạng string
-     const userId = uuidv4();
+    const userId = uuidv4();
 
     const newUser = {
         _id: userId, // Gán ID dạng string
@@ -92,6 +92,7 @@ async function RegisterHandler(req, res) {
         password: hashedPassword,
         nowLocation: null,
         roadHistory: [],
+        userRole: 1,
         createdAt: new Date()
     };
 
@@ -103,10 +104,10 @@ async function RegisterHandler(req, res) {
         user: { 
             _id: userId,
             fullName, 
-            phoneNumber 
+            phoneNumber ,
+            userRole: 1,
         } 
     });
 }
-
 
 module.exports = { LoginHandler, getInforPatients, RegisterHandler };
