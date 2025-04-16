@@ -110,4 +110,133 @@ async function RegisterHandler(req, res) {
     });
 }
 
-module.exports = { LoginHandler, getInforPatients, RegisterHandler };
+async function registerPatientByRelative(req, res) {
+    const { name, age, phoneNumber, password, diseaseDescription, relativeId } = req.body;
+
+    try {
+        // 1. Validate input
+        if (!name || !age || !phoneNumber || !password || !relativeId) {
+            return res.status(400).json({ message: 'Thiếu thông tin bắt buộc' });
+        }
+
+        // 2. Kiểm tra relative tồn tại
+        const relative = await relativesCollection.findOne({ _id: relativeId });
+        if (!relative) {
+            return res.status(404).json({ message: 'Người quản lý không tồn tại' });
+        }
+
+        // 3. Kiểm tra số điện thoại đã tồn tại
+        const existingPatient = await patientsCollection.findOne({ phoneNumber });
+        if (existingPatient) {
+            return res.status(409).json({ message: 'Số điện thoại đã được sử dụng' });
+        }
+
+        // 4. Tạo patient mới
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newPatient = {
+            _id: uuidv4(),
+            name,
+            age: parseInt(age),
+            phoneNumber,
+            password: hashedPassword,
+            diseaseDescription: diseaseDescription || '',
+            prioritize: relativeId,
+            relatives: [relativeId],
+            nowLocation: {
+                type: 'Point',
+                coordinates: [0, 0] // Default location
+            },
+            roadHistory: [],
+            userRole: 0, // 0 = patient
+            createdAt: new Date()
+        };
+
+        // 5. Lưu vào database
+        await patientsCollection.insertOne(newPatient);
+        await relativesCollection.updateOne(
+            { _id: relativeId },
+            { $addToSet: { patients: newPatient._id } }
+        );
+
+        // 6. Trả về response (không trả về password)
+        const patientResponse = {
+            _id: newPatient._id,
+            name: newPatient.name,
+            age: newPatient.age,
+            phoneNumber: newPatient.phoneNumber,
+            diseaseDescription: newPatient.diseaseDescription
+        };
+
+        return res.status(201).json({
+            message: 'Đăng ký bệnh nhân thành công',
+            patient: patientResponse
+        });
+
+    } catch (error) {
+        console.error('Error registering patient:', error);
+        return res.status(500).json({ message: 'Lỗi server' });
+    }
+}
+
+// Lấy danh sách bệnh nhân theo relativeId
+async function getPatientsByRelative(req, res) {
+    try {
+        const { relativeId } = req.params;
+
+        const relative = await relativesCollection.findOne(
+            { _id: relativeId },
+            { projection: { patients: 1 } }
+        );
+
+        if (!relative || !relative.patients) {
+            return res.status(200).json([]);
+        }
+
+        const patients = await patientsCollection.find(
+            { _id: { $in: relative.patients } },
+            { projection: { 
+                _id: 1, 
+                name: 1, 
+                age: 1, 
+                phoneNumber: 1, 
+                diseaseDescription: 1,
+                nowLocation: 1 
+            }}
+        ).toArray();
+
+        return res.status(200).json(patients);
+
+    } catch (error) {
+        console.error('Error getting patients:', error);
+        return res.status(500).json({ message: 'Lỗi server' });
+    }
+}
+
+// Xóa bệnh nhân
+async function deletePatient(req, res) {
+    try {
+        const { patientId } = req.params;
+        
+        // 1. Xóa patient
+        const result = await patientsCollection.deleteOne({ _id: patientId });
+        
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: 'Bệnh nhân không tồn tại' });
+        }
+
+        // 2. Xóa khỏi danh sách của tất cả relatives
+        await relativesCollection.updateMany(
+            { patients: patientId },
+            { $pull: { patients: patientId } }
+        );
+
+        return res.status(200).json({ message: 'Xóa bệnh nhân thành công' });
+
+    } catch (error) {
+        console.error('Error deleting patient:', error);
+        return res.status(500).json({ message: 'Lỗi server' });
+    }
+}
+
+
+module.exports = { LoginHandler, getInforPatients, RegisterHandler, registerPatientByRelative, getPatientsByRelative, deletePatient };
